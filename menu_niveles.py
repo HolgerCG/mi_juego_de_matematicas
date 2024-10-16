@@ -1,8 +1,14 @@
-# menu_niveles.py
-
+import os
 import pygame
 import sys
 from niveles import nivel_1, nivel_2, nivel_3  # Importar los niveles
+
+# Determina el directorio base del script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Función para obtener la ruta completa de un recurso
+def obtener_ruta_recurso(ruta_relativa):
+    return os.path.join(BASE_DIR, ruta_relativa)
 
 # Inicializar Pygame
 pygame.init()
@@ -14,12 +20,12 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Juego de Matemáticas - Mapa de Niveles')
 
 # Cargar imagen de fondo del mapa
-mapa_fondo = pygame.image.load(r'imagenes/mapa_juego.jpg')
+mapa_fondo = pygame.image.load(obtener_ruta_recurso('imagenes/mapa_juego.jpg'))
 mapa_fondo = pygame.transform.scale(mapa_fondo, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Cargar sonidos y música
-pygame.mixer.music.load(r'sonidos/chiptune-grooving-142242.mp3')  # Música de fondo
-sonido_click = pygame.mixer.Sound(r'sonidos/button_09-190435.mp3')  # Sonido de clic en botones
+pygame.mixer.music.load(obtener_ruta_recurso('sonidos/chiptune-grooving-142242.mp3'))  # Música de fondo
+sonido_click = pygame.mixer.Sound(obtener_ruta_recurso('sonidos/button_09-190435.mp3'))  # Sonido de clic en botones
 
 # Configurar volumen
 pygame.mixer.music.set_volume(0.5)
@@ -47,8 +53,8 @@ font = pygame.font.Font(None, 60)
 small_font = pygame.font.Font(None, 24)
 
 # Cargar íconos de sonido
-icono_sonido_on = pygame.image.load(r'imagenes/sonido_on.png')
-icono_sonido_off = pygame.image.load(r'imagenes/sonido_off.png')
+icono_sonido_on = pygame.image.load(obtener_ruta_recurso('imagenes/sonido_on.png'))
+icono_sonido_off = pygame.image.load(obtener_ruta_recurso('imagenes/sonido_off.png'))
 icono_sonido_on = pygame.transform.scale(icono_sonido_on, (50, 50))
 icono_sonido_off = pygame.transform.scale(icono_sonido_off, (50, 50))
 
