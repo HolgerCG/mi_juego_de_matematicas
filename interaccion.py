@@ -22,7 +22,7 @@ pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 480
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Interacción con Asistente Matemático')
+pygame.display.set_caption('Interacción con C.O.R.E.BOT')
 
 # Colores
 WHITE = (255, 255, 255)
@@ -32,9 +32,30 @@ RED = (200, 0, 0)
 GRAY = (100, 100, 100)
 DARK_GRAY = (50, 50, 50)
 
+# Función para cargar una fuente que soporte emojis
+def cargar_fuente_emoji(tamano):
+    try:
+        if sys.platform == "win32":
+            nombre_fuente = "Segoe UI Emoji"
+        elif sys.platform == "darwin":  # macOS
+            nombre_fuente = "Apple Color Emoji"
+        elif sys.platform == "linux":
+            nombre_fuente = "Noto Color Emoji"
+        else:
+            nombre_fuente = None
+
+        if nombre_fuente:
+            fuente = pygame.font.SysFont(nombre_fuente, tamano)
+        else:
+            fuente = pygame.font.Font(None, tamano)
+    except Exception as e:
+        print(f"Error al cargar la fuente: {e}")
+        fuente = pygame.font.Font(None, tamano)
+    return fuente
+
 # Fuentes
-font = pygame.font.Font(None, 36)
-font_large = pygame.font.Font(None, 32)  # Ajusta el tamaño si es necesario
+font = cargar_fuente_emoji(32)
+font_large = cargar_fuente_emoji(30)
 
 # Configurar OpenAI
 openai.api_key = 'CLAVEZZZ'  # Asegúrate de configurar la variable de entorno
@@ -42,9 +63,9 @@ openai.api_key = 'CLAVEZZZ'  # Asegúrate de configurar la variable de entorno
 # Inicializar pyttsx3
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
-# Seleccionar una voz masculina (ajusta el índice según las voces disponibles)
+# Seleccionar una voz masculina en español
 for voice in voices:
-    if "spanish" in voice.name.lower() and "male" in voice.name.lower():
+    if "spanish" in voice.name.lower():
         engine.setProperty('voice', voice.id)
         break
 
@@ -66,9 +87,11 @@ historial_mensajes = [
     {
         "role": "system",
         "content": (
-            "Te llamas C.O.R.E.BOT, un asistente educativo diseñado por Holger Centeno bajo la dirección del PhD Orlando Erazo, para ayudar a niños de quinto año de educación básica en matemáticas. "
-            "Tu objetivo es enseñar y explicar conceptos matemáticos de manera clara, sencilla y amigable. "
-            "Si el niño hace una pregunta que no está relacionada con matemáticas de quinto grado, amablemente debes indicarle que solo puedes ayudar con ese tema y animarlo a seguir aprendiendo."
+            "Te llamas COREBOT, un robot amigable y divertido diseñado por Holger Centeno bajo la dirección del PhD Orlando Erazo para ayudar a niños de quinto año de educación básica en matemáticas. "
+            "Habla de manera cálida y sencilla, usando palabras que los niños puedan entender fácilmente. "
+            "Utiliza ejemplos prácticos y cotidianos, y si lo deseas, incluye emojis para hacerlo más divertido 🎉. "
+            "Evita usar palabras complicadas o técnicas. "
+            "Si el niño hace una pregunta que no está relacionada con matemáticas de quinto grado, amablemente dile que solo puedes ayudar con ese tema y anímalo a seguir aprendiendo 😊."
         )
     }
 ]
@@ -109,7 +132,7 @@ def interaccion():
     fondo_interaccion = pygame.transform.scale(fondo_interaccion, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
     # Crear botón de "Volver al menú principal"
-    boton_salir_rect = pygame.Rect(10, 10, 200, 50)  # Posición y tamaño del botón
+    boton_salir_rect = pygame.Rect(10, 20, 200, 50)
 
     # Crear botones de "Iniciar" y "Detener" grabación
     boton_iniciar_rect = pygame.Rect(SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT - 80, 120, 50)
@@ -119,7 +142,7 @@ def interaccion():
         screen.blit(fondo_interaccion, (0, 0))
 
         # Dibujar botón de "Volver al menú principal"
-        pygame.draw.rect(screen, RED, boton_salir_rect)
+        pygame.draw.rect(screen, GRAY, boton_salir_rect)
         texto_boton = font.render("Volver al menú", True, WHITE)
         texto_boton_rect = texto_boton.get_rect(center=boton_salir_rect.center)
         screen.blit(texto_boton, texto_boton_rect)

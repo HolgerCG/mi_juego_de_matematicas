@@ -20,17 +20,21 @@ def mostrar_acerca_de(screen):
 
     # Fuentes
     font = pygame.font.SysFont("Comic Sans MS", 36, bold=True)
-    small_font = pygame.font.SysFont("Comic Sans MS", 24)
+    small_font = pygame.font.SysFont("Comic Sans MS", 28)
 
     # Texto que se mostrará
-    titulo = "Acerca de MATEBOT"
+    titulo = "Acerca de COREBOT"
     descripcion = [
-        "MATEBOT es un robot interactivo creado para el apoyo",
-        "en la enseñanza de MATEMATICAS a niños pequeños.",
-        "Responde preguntas y brinda apoyo didáctico.",
-        "Autor: Holger Centeno.",
-        "Bajo la dirección del Ing. Orlando Erazo, PhD.",
-        "Hecho con Python y Pygame."
+        "Bienvenido a COREBOT! 🤖✨",
+"COREBOT es un robot educativo amigable y divertido,",
+"Creado para el apoyo en la enseñanza de MATEMÁTICAS",
+"Para las y los niños pequeños.",
+"Responde preguntas y brinda apoyo didáctico,",
+"con ejemplos prácticos y cotidianos",
+"que hacen que las matemáticas sean más fáciles de entender.",
+"Autor: Holger Centeno.",
+"Bajo la dirección del Ing. Orlando Erazo, PhD.",
+"Hecho con Python y Pygame."
     ]
 
     # Fondo con un color degradado mejorado
