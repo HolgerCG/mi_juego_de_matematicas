@@ -4,6 +4,7 @@ import sys
 from menu_niveles import mapa_niveles  # Asegúrate de que esta importación y función existan
 from compartido import mostrar_texto_centrado # Importar funciones compartidas
 from acerca_de import mostrar_acerca_de  # Importar mostrar_acerca_de desde acercade.py
+from interaccion import interaccion  # Importar interaccion desde interaccion.py
 
 # Función para obtener la ruta completa de un recurso
 def obtener_ruta_recurso(ruta_relativa):
@@ -118,6 +119,7 @@ def menu_principal():
                 elif boton_opcion2.collidepoint(event.pos):
                     sonido_click.play()  # Reproducir sonido al hacer clic en el botón
                     print("Interacción activada.")  # Acción para el botón Interacción (modificar según sea necesario)
+                    interaccion()  # Llamar a la función `interaccion` cuando se presione el botón Interacción                
                 elif boton_acerca.collidepoint(event.pos):
                     sonido_click.play()  # Reproducir sonido al hacer clic en el botón
                     mostrar_acerca_de(screen)  # Llamar a la función `mostrar_acerca_de` cuando se presione el botón Acerca de
