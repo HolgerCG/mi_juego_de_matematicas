@@ -37,7 +37,7 @@ font = pygame.font.Font(None, 36)
 font_large = pygame.font.Font(None, 32)  # Ajusta el tamaño si es necesario
 
 # Configurar OpenAI
-openai.api_key = 'sk-7Z1V2qIWwRWSYwOYvgAnBb71C3HDqWMwfrZPlaj6aaT3BlbkFJs3EMRbLTTM-I78D74RLibCykqPSi7tLpVi9QnGFRAA'  # Asegúrate de configurar la variable de entorno
+openai.api_key = 'CLAVEZZZ'  # Asegúrate de configurar la variable de entorno
 
 # Inicializar pyttsx3
 engine = pyttsx3.init()
