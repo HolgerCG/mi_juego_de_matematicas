@@ -58,7 +58,7 @@ font = cargar_fuente_emoji(32)
 font_large = cargar_fuente_emoji(30)
 
 # Configurar OpenAI
-openai.api_key = 'CLAVEZZZ'  # Asegúrate de configurar la variable de entorno
+openai.api_key = ''  # Asegúrate de configurar la variable de entorno
 
 # Inicializar pyttsx3
 engine = pyttsx3.init()
