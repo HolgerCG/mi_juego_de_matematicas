@@ -5,18 +5,20 @@ import sys
 import pygame
 import speech_recognition as sr
 import threading
-import openai
-import io
+from pathlib import Path
 from pygame.locals import *
 from compartido import mostrar_texto_centrado
 
-# Usaremos pyttsx3 para la síntesis de voz con voz masculina
-import pyttsx3
 import re
 import time
+from pydub import AudioSegment
 
-# Inicializar Pygame
+# Importaciones específicas para OpenAI
+from openai import OpenAI
+
+# Inicializar Pygame y pygame.mixer
 pygame.init()
+pygame.mixer.init()
 
 # Configuración de pantalla
 SCREEN_WIDTH = 800
@@ -57,17 +59,9 @@ def cargar_fuente_emoji(tamano):
 font = cargar_fuente_emoji(32)
 font_large = cargar_fuente_emoji(30)
 
-# Configurar OpenAI
-openai.api_key = 'sk-API'  # Asegúrate de configurar la variable de entorno
-
-# Inicializar pyttsx3
-engine = pyttsx3.init()
-voices = engine.getProperty('voices')
-# Seleccionar una voz masculina en español
-for voice in voices:
-    if "spanish" in voice.name.lower():
-        engine.setProperty('voice', voice.id)
-        break
+# Configurar OpenAI con tu clave de API
+api_key = 'CLAVE OPENAI'  # Reemplaza con tu clave de API
+client = OpenAI(api_key=api_key)
 
 # Función para obtener la ruta completa de un recurso
 def obtener_ruta_recurso(ruta_relativa):
@@ -121,6 +115,123 @@ def dividir_en_oraciones(texto):
     oraciones = re.split(r'(?<=[.!?]) +', texto)
     return oraciones
 
+# Función para reproducir respuesta en voz usando pygame.mixer.Sound
+def reproducir_respuesta(texto):
+    try:
+        print(f"Procesando respuesta completa: {texto}")
+        # Generar archivo de audio temporal usando la API de OpenAI TTS
+        speech_file_path = Path(__file__).parent / "speech.mp3"
+        with client.audio.speech.with_streaming_response.create(
+            model="tts-1",
+            voice="alloy",
+            input=texto
+        ) as response:
+            response.stream_to_file(speech_file_path)
+        
+        print(f"Audio generado en: {speech_file_path}")
+
+        # Verificar que el archivo de audio existe y tiene contenido
+        if speech_file_path.exists() and speech_file_path.stat().st_size > 0:
+            # Convertir MP3 a WAV usando pydub
+            wav_file_path = Path(__file__).parent / "speech.wav"
+            sound = AudioSegment.from_mp3(speech_file_path)
+            sound.export(wav_file_path, format="wav")
+            print(f"Audio convertido a WAV en: {wav_file_path}")
+
+            # Reproducir el audio usando pygame.mixer.Sound
+            try:
+                print("Reproduciendo audio...")
+                sound_to_play = pygame.mixer.Sound(str(wav_file_path))
+                channel = sound_to_play.play()
+
+                # Esperar a que la reproducción termine
+                while channel.get_busy():
+                    pygame.time.Clock().tick(10)
+
+                print("Audio reproducido completamente.")
+            except Exception as play_error:
+                print(f"Error al reproducir el audio: {play_error}")
+
+            # Eliminar los archivos temporales
+            if speech_file_path.exists():
+                speech_file_path.unlink()
+                print("Archivo MP3 temporal eliminado.")
+            if wav_file_path.exists():
+                wav_file_path.unlink()
+                print("Archivo WAV temporal eliminado.")
+        else:
+            print("El archivo de audio no existe o está vacío.")
+    except Exception as e:
+        print(f"Error al reproducir respuesta: {e}")
+
+# Función para obtener respuesta de la IA
+def obtener_respuesta_ia(historial_mensajes):
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=historial_mensajes,
+            temperature=0.7,
+            max_tokens=300,
+            n=1,
+            stop=None
+        )
+        # Corregir el acceso al contenido del mensaje
+        respuesta = response.choices[0].message.content.strip()
+        print(f"C.O.R.E.BOT: {respuesta}")
+        return respuesta
+    except Exception as e:
+        print(f"Error al obtener respuesta de la IA: {e}")
+        return f"Lo siento, hubo un error al procesar tu solicitud: {e}"
+
+# Función para grabar audio desde el micrófono
+def grabar_audio():
+    global user_text, response_text, grabando, historial_mensajes
+
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        audio_list = []
+
+        print("Grabando...")
+        while grabando:
+            try:
+                audio = recognizer.listen(source, timeout=1, phrase_time_limit=5)
+                audio_list.append(audio)
+            except sr.WaitTimeoutError:
+                continue
+
+        if audio_list:
+            # Unir todos los fragmentos de audio
+            combined_audio = sr.AudioData(
+                b''.join([a.get_raw_data() for a in audio_list]),
+                audio_list[0].sample_rate,
+                audio_list[0].sample_width
+            )
+            try:
+                text = recognizer.recognize_google(combined_audio, language='es-ES')
+                print(f"Tú dijiste: {text}")
+                user_text = text
+
+                # Añadir el mensaje del usuario al historial
+                historial_mensajes.append({"role": "user", "content": text})
+
+                # Obtener respuesta de la IA
+                response_text = obtener_respuesta_ia(historial_mensajes)
+
+                # Añadir la respuesta de la IA al historial
+                historial_mensajes.append({"role": "assistant", "content": response_text})
+
+                reproducir_respuesta(response_text)
+            except sr.UnknownValueError:
+                response_text = "No te he entendido, ¿puedes repetirlo?"
+                reproducir_respuesta(response_text)
+            except Exception as e:
+                print(f"Error al procesar el audio: {e}")
+                response_text = f"Lo siento, hubo un error al procesar tu solicitud: {e}"
+                reproducir_respuesta(response_text)
+        else:
+            response_text = "No se recibió ningún audio."
+            reproducir_respuesta(response_text)
+
 # Función principal de interacción
 def interaccion():
     global grabando, user_text, response_text, mostrando_habla_ahora, historial_mensajes, tiempo_inicio_grabacion
@@ -171,7 +282,7 @@ def interaccion():
         # Mostrar texto del asistente
         render_text_multiline(f"C.O.R.E.BOT: {response_text}", x_text, 220, font_large, BLACK, max_width)
 
-        # Mostrar mensaje "Habla ahora" si es necesario
+        # Mostrar mensaje "¡Habla ahora!" si es necesario
         if mostrando_habla_ahora:
             # Verificar si ha pasado el tiempo para ocultar el mensaje
             tiempo_transcurrido = time.time() - tiempo_inicio_grabacion
@@ -208,78 +319,5 @@ def interaccion():
 
     pygame.quit()
 
-def grabar_audio():
-    global user_text, response_text, grabando, historial_mensajes
-
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        audio_list = []
-
-        print("Grabando...")
-        while grabando:
-            try:
-                audio = recognizer.listen(source, timeout=1, phrase_time_limit=5)
-                audio_list.append(audio)
-            except sr.WaitTimeoutError:
-                continue
-
-        if audio_list:
-            # Unir todos los fragmentos de audio
-            combined_audio = sr.AudioData(
-                b''.join([a.get_raw_data() for a in audio_list]),
-                audio_list[0].sample_rate,
-                audio_list[0].sample_width
-            )
-            try:
-                text = recognizer.recognize_google(combined_audio, language='es-ES')
-                print(f"Tú dijiste: {text}")
-                user_text = text
-
-                # Añadir el mensaje del usuario al historial
-                historial_mensajes.append({"role": "user", "content": text})
-
-                # Obtener respuesta de la IA
-                response_text = obtener_respuesta_ia(historial_mensajes)
-
-                # Añadir la respuesta de la IA al historial
-                historial_mensajes.append({"role": "assistant", "content": response_text})
-
-                reproducir_respuesta(response_text)
-            except sr.UnknownValueError:
-                response_text = "No te he entendido, ¿puedes repetirlo?"
-                reproducir_respuesta(response_text)
-            except Exception as e:
-                print(f"Error al procesar el audio: {e}")
-                response_text = f"Lo siento, hubo un error al procesar tu solicitud: {e}"
-                reproducir_respuesta(response_text)
-        else:
-            response_text = "No se recibió ningún audio."
-            reproducir_respuesta(response_text)
-
-def obtener_respuesta_ia(historial_mensajes):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=historial_mensajes,
-            temperature=0.7,
-            max_tokens=300,
-            n=1,
-            stop=None
-        )
-        respuesta = response.choices[0].message['content'].strip()
-        print(f"C.O.R.E.BOT: {respuesta}")
-        return respuesta
-    except Exception as e:
-        print(f"Error al obtener respuesta de la IA: {e}")
-        return f"Lo siento, hubo un error al procesar tu solicitud: {e}"
-
-# Función para reproducir respuesta en voz usando pyttsx3
-def reproducir_respuesta(texto):
-    try:
-        # Dividir el texto en oraciones sin NLTK
-        oraciones = dividir_en_oraciones(texto)
-        for oracion in oraciones:
-            engine.say(oracion)
-        engine.runAndWait()
-    except Exception as e:
-        print(f"Error al reproducir respuesta: {e}")
+if __name__ == "__main__":
+    interaccion()
